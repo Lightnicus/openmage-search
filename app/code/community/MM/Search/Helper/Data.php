@@ -108,4 +108,19 @@ class MM_Search_Helper_Data extends Mage_Core_Helper_Abstract
     {
         return (int) Mage::getStoreConfig(self::XML_PATH_INSTANTSEARCH_CACHE, $storeId);
     }
+
+	public function getFormKey()
+	{
+		return Mage::getSingleton('core/session')->getFormKey();
+	}
+
+	/**
+	 * Get form key as JSON-encoded parameter
+	 *
+	 * @return string
+	 */
+	public function getFormKeyParam()
+	{
+		return $this->escapeHtml(json_encode(['form_key' => $this->getFormKey()]));
+	}
 }

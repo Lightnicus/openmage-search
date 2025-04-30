@@ -1,8 +1,8 @@
 /**
- * Implementazione di InstantSearch.js per Typesense
+ * Implementation of InstantSearch.js for Typesense
  */
 document.addEventListener('DOMContentLoaded', function() {    
-    // Inizializza l'adapter Typesense per InstantSearch
+    // Initialize Typesense adapter for InstantSearch
     const typesenseInstantsearchAdapter = new TypesenseInstantSearchAdapter({
         server: {
             apiKey: window.typesenseConfig.apiKey,
@@ -33,11 +33,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Configura i widget di InstantSearch
+    // Get the form_key from hidden field
+    const formKey = document.getElementById('typesense-form-key').value;
+
+    const sendEvent = (type, hit, message) => {
+        console.log(message);
+    }
+    
+    /**
+     * Format price according to Magento standards
+     * @param {number} price - The price to format
+     * @return {string} - Formatted price string
+     */
+    const formatPrice = (price) => {
+        if (!price) return '';
+        
+        // Format with 2 decimal places and thousands separator
+        const numericPrice = parseFloat(price);
+        return '$' + numericPrice.toLocaleString('en-NZ', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    };
+
+    // Configure InstantSearch widgets
     search.addWidgets([
         instantsearch.widgets.searchBox({
             container: '#typesense-searchbox',
-            placeholder: 'Cerca prodotti...',
+            placeholder: 'Type to search...',
             autofocus: true,
             searchAsYouType: true,
             showReset: false,
@@ -45,49 +68,49 @@ document.addEventListener('DOMContentLoaded', function() {
             showLoadingIndicator: true
         }),
 
-        // Aggiungi il widget per mostrare il numero di risultati
+        // Add widget to show results count
         instantsearch.widgets.stats({
             container: '#typesense-stats',
             templates: {
                 text: ({ nbHits, processingTimeMS }) => 
-                    `${nbHits} risultati trovati in ${processingTimeMS}ms`
+                    `${nbHits} searched in ${processingTimeMS}ms`
             }
         }),
 
-        // Aggiungi il widget per l'ordinamento
+        // Add sorting widget
         instantsearch.widgets.sortBy({
             container: '#typesense-sort-by',
             items: [
-                { label: 'Rilevanza', value: window.typesenseConfig.collectionName },
-                { label: 'Prezzo (Da minore a maggiore)', value: `${window.typesenseConfig.collectionName}/sort/price:asc` },
-                { label: 'Prezzo (Da maggiore a minore)', value: `${window.typesenseConfig.collectionName}/sort/price:desc` }
+                { label: 'Relevance', value: window.typesenseConfig.collectionName },
+                { label: 'Price (Lowest first)', value: `${window.typesenseConfig.collectionName}/sort/price:asc` },
+                { label: 'Price (Highest first)', value: `${window.typesenseConfig.collectionName}/sort/price:desc` }
             ]
         }),
 
-        // Aggiungi il widget per i facet di categoria
+        // Add category facet widget
         instantsearch.widgets.refinementList({
             container: '#typesense-categories',
             attribute: 'category_names',
             operator: 'or',
-            header: 'Categorie',
+            header: 'Category',
             limit: 5,
             showMore: true,
             showMoreLimit: 10,
             searchable: false,
-            searchablePlaceholder: 'Cerca categorie...',
+            searchablePlaceholder: 'Search category...',
             templates: {
-                header: 'Categorie'
+                header: 'Category'
             }
         }),
 
-        // Aggiungi widget dinamici per i facet configurati
+        // Add dynamic widgets for configured facets
         ...window.typesenseConfig.facetBy.map(facet => {
             return facet === 'price' 
                 ? instantsearch.widgets.rangeSlider({
                     container: `#typesense-${facet}`,
                     attribute: facet,
                     templates: {
-                        header: 'Prezzo'
+                        header: 'Price'
                     }
                 })
                 : instantsearch.widgets.refinementList({
@@ -105,13 +128,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         ),
 
-        // Sostituisci hits con infiniteHits per implementare l'infinite scroll
+        // Replace hits with infiniteHits to implement infinite scroll
         instantsearch.widgets.infiniteHits({
             container: '#typesense-hits',
             templates: {
-                empty: 'Nessun risultato trovato',
-                item: (hit, { html, components }) => {                    
-                    // Usa l'immagine ridimensionata se disponibile
+                empty: 'No results found',
+                item: (hit, { html, components }, sendEvent) => {
+                    // Use resized image if available
                     let imageUrl = '/skin/frontend/base/default/images/catalog/product/placeholder/image.jpg';
                     if (hit.thumbnail_medium) {
                         imageUrl = hit.thumbnail_medium;
@@ -121,10 +144,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         imageUrl = `/media/catalog/product${hit.thumbnail}`;
                     }
                     
-                    // Costruisci l'URL del prodotto con il prefisso dello store code
+                    // Build product URL with store code prefix
                     let productUrl = '#';
                     if (hit.request_path) {
-                        // Se c'è uno store code, lo aggiungiamo come prefisso
+                        // If there's a store code, add it as prefix
                         if (window.typesenseConfig.storeCode) {
                             productUrl = `/${window.typesenseConfig.storeCode}/${hit.request_path}`;
                         } else {
@@ -132,47 +155,61 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                     
-                    // Formatta il prezzo
-                    const price = hit.price ? `${hit.price} €` : 'Prezzo non disponibile';
+                    // Format the price
+                    const price = formatPrice(hit.price);
+                    
+                    // Build cart URL using standard Magento format
+                    // Include form_key parameter which is the standard format
+                    const cartUrl = `/checkout/cart/add/uenc/${btoa(window.location.href)}/product/${hit.id}/form_key/${formKey}/`;
                     
                     return html`
-                        <article>
-                            <a href="${productUrl}">
-                                <img src="${imageUrl}" alt="${hit.name || 'Prodotto'}" />
-                            </a>
-                            <div class="product-content">
-                                <h2 class="product-name">
-                                    <a href="${productUrl}">
-                                        ${components.Highlight({ hit, attribute: 'name' })}
-                                    </a>
-                                </h2>
-                                <p class="product-sku">
-                                    SKU: ${components.Highlight({ hit, attribute: 'sku' })}
-                                </p>
-                                <div class="price-box">
+                        <article class="search-result">
+                            <div class="result-info-box">
+                                <a href="${productUrl}">
+                                    <img class="search-thumbnail" src="${imageUrl}" alt="${hit.name || 'League of Brewers products'}" />
+                                </a>
+                                <div class="product-content">
+                                    <h3 class="product-name">
+                                        <a href="${productUrl}">
+                                            ${components.Highlight({ hit, attribute: 'name' })}
+                                        </a>
+                                    </h3>
+                                    <p class="product-sku">
+                                        SKU: ${components.Highlight({ hit, attribute: 'sku' })}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="price-box">
+                                <div class="price-box-inner">
                                     <p class="product-price">
                                         <span class="price">${price}</span>
                                     </p>
+                                    <button 
+                                        type="button"
+                                        class="button btn-cart"
+                                        onclick=${() => setLocation(`${cartUrl}`)}>
+                                        <span>Add to cart</span>
+                                    </button>
                                 </div>
                             </div>
                         </article>
                     `;
                 },
-                showMoreText: 'Carica altri prodotti'
+                showMoreText: 'Show more'
             },
             showMoreButton: true
         })
     ]);
 
-    // Inizializza la ricerca quando l'overlay viene aperto
+    // Initialize search when overlay is opened
     const overlay = document.getElementById('typesense-overlay');
     const mainInput = document.getElementById('search');
     let searchStarted = false;
 
-    // Apri l'overlay al click sull'input
+    // Open overlay on input click
     mainInput.addEventListener('click', function() {
         overlay.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Blocca lo scroll della pagina
+        document.body.style.overflow = 'hidden'; // Block page scrolling
         
         if (!searchStarted) {
             try {
@@ -186,13 +223,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Chiudi l'overlay al click sul bottone di chiusura
+    // Close overlay when close button is clicked
     document.querySelector('.typesense-close-btn').addEventListener('click', function() {
         overlay.classList.remove('active');
-        document.body.style.overflow = ''; // Ripristina lo scroll della pagina
+        document.body.style.overflow = ''; // Restore page scrolling
     });
 
-    // Chiudi l'overlay premendo ESC
+    // Close overlay when ESC key is pressed
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && overlay.classList.contains('active')) {
             overlay.classList.remove('active');
@@ -200,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Sincronizza il valore dell'input principale con InstantSearch
+    // Synchronize main input value with InstantSearch
     mainInput.addEventListener('input', function(e) {
         if (searchStarted) {
             try {
@@ -211,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Debug degli eventi di ricerca
+    // Debug search events
     search.on('render', function() {
         //console.log('Search results rendered');
     });

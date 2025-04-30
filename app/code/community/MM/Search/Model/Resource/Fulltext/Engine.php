@@ -249,14 +249,14 @@ class MM_Search_Model_Resource_Fulltext_Engine extends Mage_CatalogSearch_Model_
 		try {
 			$thumbnailPath = $product->getThumbnail();
 			if (!$thumbnailPath || !file_exists(Mage::getBaseDir('media') . DS . 'catalog' . DS . 'product' . DS . $thumbnailPath)) {
-				return Mage::getBaseUrl('media') . '/media/home/placehold.jpg';
+				return Mage::getBaseUrl('media') . '/home/placehold.jpg';
 			}
 
 			$imageHelper = Mage::helper('catalog/image');
 			$imageUrl = $imageHelper->init($product, 'thumbnail')
 				->resize($width, $height);
 			if (!$imageUrl) {
-				return Mage::getBaseUrl('media') . '/media/home/placehold.jpg';
+				return Mage::getBaseUrl('media') . '/home/placehold.jpg';
 			}
 
 			return $imageUrl;

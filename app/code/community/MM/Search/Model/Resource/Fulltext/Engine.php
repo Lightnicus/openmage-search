@@ -244,22 +244,27 @@ class MM_Search_Model_Resource_Fulltext_Engine extends Mage_CatalogSearch_Model_
      * @param int $height Altezza desiderata
      * @return string URL dell'immagine ridimensionata
      */
-    protected function _getResizedImageUrl(Mage_Catalog_Model_Product $product, $width, $height)
-    {
-        try {
-            $imageHelper = Mage::helper('catalog/image');
-            $imageUrl = $imageHelper->init($product, 'thumbnail')
-                ->resize($width, $height);
-            if (!$imageUrl) {
-                return Mage::getDesign()->getSkinUrl('images/catalog/product/placeholder/image.jpg');
-            }
-            
-            return $imageUrl;
-        } catch (Exception $e) {
-            Mage::logException($e);
-            return '';
-        }
-    }
+	protected function _getResizedImageUrl(Mage_Catalog_Model_Product $product, $width, $height)
+	{
+		try {
+			$thumbnailPath = $product->getThumbnail();
+			if (!$thumbnailPath || !file_exists(Mage::getBaseDir('media') . DS . 'catalog' . DS . 'product' . DS . $thumbnailPath)) {
+				return Mage::getBaseUrl('media') . '/media/home/placehold.jpg';
+			}
+
+			$imageHelper = Mage::helper('catalog/image');
+			$imageUrl = $imageHelper->init($product, 'thumbnail')
+				->resize($width, $height);
+			if (!$imageUrl) {
+				return Mage::getBaseUrl('media') . '/media/home/placehold.jpg';
+			}
+
+			return $imageUrl;
+		} catch (Exception $e) {
+			Mage::logException($e);
+			return '';
+		}
+	}
     
     /**
      * Get category names for a product

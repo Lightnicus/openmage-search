@@ -95,7 +95,7 @@ class MM_Search_Model_Resource_Fulltext_Engine extends Mage_CatalogSearch_Model_
 					'thumbnail_small' => (string) $this->_getResizedImageUrl($product, 100, 100),
 					'thumbnail_medium' => (string) $this->_getResizedImageUrl($product, 300, 300),
 					'product_type' => (string) $product->getTypeId(),
-					'is_saleable' => (bool) $product->isSaleable()
+					'is_saleable' => $this->_isProductSaleable($product)
 				]);
 
 				// Add price data
@@ -297,5 +297,32 @@ class MM_Search_Model_Resource_Fulltext_Engine extends Mage_CatalogSearch_Model_
 			->addAttributeToSelect('name')
 			->addAttributeToFilter('is_active', true);
 		return $categoryCollection->getColumnValues('name');
+	}
+
+	/**
+	 * Check if a product is saleable
+	 *
+	 * @param Mage_Catalog_Model_Product $product
+	 * @return bool
+	 */
+	protected function _isProductSaleable(Mage_Catalog_Model_Product $product)
+	{
+		if ($product->getTypeId() == Mage_Catalog_Model_Product_Type::TYPE_CONFIGURABLE) {
+			$childProducts = Mage::getModel('catalog/product_type_configurable')
+				->getUsedProducts(null, $product);
+
+			foreach ($childProducts as $childProduct) {
+				$stock = Mage::getModel('cataloginventory/stock_item')->loadByProduct($childProduct);
+				if ($stock->getIsInStock()) {
+					return true;
+				}
+			}
+			return false;
+		} elseif ($product->getTypeId() == Mage_Catalog_Model_Product_Type::TYPE_BUNDLE) {
+			$options = $product->getTypeInstance(true)->getOptionsIds($product);
+			return count($options) > 0 && $product->isSaleable();
+		}
+
+		return $product->isSaleable();
 	}
 }

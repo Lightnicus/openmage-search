@@ -205,14 +205,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <span class="price">${priceDisplay}</span>
                                     </p>
                                     ${hit.is_saleable ? html`
-                                    <button 
-                                        type="button"
-                                        class="button btn-cart"
-                                        onclick=${() => setLocation(`${cartUrl}`)}>
-                                        <span>${hit.product_type === 'configurable' ? 'Choose Options' : 'Add to Cart'}</span>
-                                    </button>
+                                        <button
+                                          type="button"
+                                          class="button btn-cart"
+                                          onclick=${() => setLocation(`${cartUrl}`)}>
+                                            <span>${hit.product_type === 'configurable' ? 'Choose Options' : 'Add to Cart'}</span>
+                                        </button>
                                     ` : html`
-                                    <p class="availability out-of-stock"><span>Out of stock</span></p>
+                                        <p class="availability out-of-stock"><span>Out of stock</span></p>
                                     `}
                                 </div>
                             </div>
@@ -251,6 +251,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.typesense-close-btn').addEventListener('click', function() {
         overlay.classList.remove('active');
         document.body.style.overflow = ''; // Restore page scrolling
+    });
+
+    // Clear search when clear button is clicked
+    document.querySelector('.typesense-clear-btn').addEventListener('click', function() {
+        if (searchStarted) {
+            search.helper.setQuery('').search();
+            if (mainInput) {
+                mainInput.value = '';
+            }
+        }
     });
 
     // Close overlay when ESC key is pressed

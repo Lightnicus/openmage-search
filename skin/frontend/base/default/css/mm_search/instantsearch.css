@@ -6,7 +6,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(238, 239, 230, 0.95);
+    background: rgb(238, 239, 230);
     z-index: 9999;
     padding: 20px;
     box-sizing: border-box;
@@ -52,6 +52,24 @@
     color: #333;
 }
 
+.typesense-clear-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+
+.typesense-clear-btn:hover {
+    color: #333;
+}
+
 .typesense-overlay-content {
     margin: 0 auto;
     padding: 0 15px;
@@ -64,6 +82,7 @@
     align-items: center;
     margin-bottom: 20px;
     padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
 }
 
 #typesense-stats {
@@ -245,12 +264,12 @@
     .typesense-main-content {
         flex-direction: column;
     }
-    
+
     .typesense-facets {
         width: 100%;
         margin-bottom: 20px;
     }
-    
+
     .typesense-top-bar {
         flex-direction: column;
         align-items: flex-start;

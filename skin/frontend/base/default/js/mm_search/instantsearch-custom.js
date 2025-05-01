@@ -1,7 +1,7 @@
 /**
  * Implementation of InstantSearch.js for Typesense
  */
-document.addEventListener('DOMContentLoaded', function() {    
+document.addEventListener('DOMContentLoaded', function() {
     // Initialize Typesense adapter for InstantSearch
     const typesenseInstantsearchAdapter = new TypesenseInstantSearchAdapter({
         server: {
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const sendEvent = (type, hit, message) => {
         console.log(message);
     }
-    
+
     /**
      * Format price according to Magento standards
      * @param {number} price - The price to format
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     const formatPrice = (price) => {
         if (!price) return '';
-        
+
         // Format with 2 decimal places and thousands separator
         const numericPrice = parseFloat(price);
         return '$' + numericPrice.toLocaleString('en-NZ', {
@@ -72,8 +72,8 @@ document.addEventListener('DOMContentLoaded', function() {
         instantsearch.widgets.stats({
             container: '#typesense-stats',
             templates: {
-                text: ({ nbHits, processingTimeMS }) => 
-                    `${nbHits} searched in ${processingTimeMS}ms`
+                text: ({ nbHits, processingTimeMS }) =>
+                  `${nbHits} searched in ${processingTimeMS}ms`
             }
         }),
 
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Add dynamic widgets for configured facets
         ...window.typesenseConfig.facetBy.map(facet => {
-            return facet === 'price' 
+              return facet === 'price'
                 ? instantsearch.widgets.rangeSlider({
                     container: `#typesense-${facet}`,
                     attribute: facet,
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         header: facet.charAt(0).toUpperCase() + facet.slice(1).replace(/_/g, ' ')
                     }
                 })
-            }
+          }
         ),
 
         // Replace hits with infiniteHits to implement infinite scroll
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else if (hit.thumbnail) {
                         imageUrl = `/media/catalog/product${hit.thumbnail}`;
                     }
-                    
+
                     // Build product URL with store code prefix
                     let productUrl = '#';
                     if (hit.request_path) {
@@ -154,14 +154,34 @@ document.addEventListener('DOMContentLoaded', function() {
                             productUrl = `/${hit.request_path}`;
                         }
                     }
-                    
+
                     // Format the price
-                    const price = formatPrice(hit.price);
-                    
-                    // Build cart URL using standard Magento format
-                    // Include form_key parameter which is the standard format
-                    const cartUrl = `/checkout/cart/add/uenc/${btoa(window.location.href)}/product/${hit.id}/form_key/${formKey}/`;
-                    
+                    let priceDisplay = '';
+                    if (hit.product_type === 'bundle') {
+                        // For bundle products, show "From $X" if min_price is available
+                        if (hit.min_price) {
+                            priceDisplay = `From ${formatPrice(hit.min_price)}`;
+                        } else {
+                            priceDisplay = formatPrice(hit.price);
+                        }
+                    } else if (hit.product_type === 'configurable') {
+                        // For configurable products
+                        priceDisplay = formatPrice(hit.min_price || hit.price);
+                    } else {
+                        // For simple products
+                        priceDisplay = formatPrice(hit.min_price || hit.price);
+                    }
+
+                    // Build cart URL based on product type
+                    let cartUrl = '';
+                    if (hit.product_type === 'configurable') {
+                        // For configurable products, direct to product page with options=cart parameter
+                        cartUrl = `${productUrl}?options=cart`;
+                    } else {
+                        // For simple products, use standard cart/add URL
+                        cartUrl = `/checkout/cart/add/uenc/${btoa(window.location.href)}/product/${hit.id}/form_key/${formKey}/`;
+                    }
+
                     return html`
                         <article class="search-result">
                             <div class="result-info-box">
@@ -182,14 +202,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="price-box">
                                 <div class="price-box-inner">
                                     <p class="product-price">
-                                        <span class="price">${price}</span>
+                                        <span class="price">${priceDisplay}</span>
                                     </p>
+                                    ${hit.is_saleable ? html`
                                     <button 
                                         type="button"
                                         class="button btn-cart"
                                         onclick=${() => setLocation(`${cartUrl}`)}>
-                                        <span>Add to cart</span>
+                                        <span>${hit.product_type === 'configurable' ? 'Choose Options' : 'Add to Cart'}</span>
                                     </button>
+                                    ` : html`
+                                    <p class="availability out-of-stock"><span>Out of stock</span></p>
+                                    `}
                                 </div>
                             </div>
                         </article>
@@ -210,7 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
     mainInput.addEventListener('click', function() {
         overlay.classList.add('active');
         document.body.style.overflow = 'hidden'; // Block page scrolling
-        
+
         if (!searchStarted) {
             try {
                 //console.log('Starting InstantSearch...');

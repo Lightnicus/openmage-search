@@ -127,7 +127,6 @@ class MM_Search_Model_Resource_Fulltext_Engine extends Mage_CatalogSearch_Model_
 			}
 			return $this;
 		} catch (Exception $e) {
-			dd($e->getMessage());
 			Mage::logException($e);
 			// Fallback to default engine
 			return parent::saveEntityIndexes($storeId, $entityIndexes, $entityType);

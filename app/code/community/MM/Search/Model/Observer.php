@@ -63,7 +63,6 @@ class MM_Search_Model_Observer
                 $_modelApi->setStoreId($store->getId())->updateSchema($attribute);
             }
         } catch (Exception $e) {
-            dd($e->getMessage());
             Mage::logException($e);
         }
     }

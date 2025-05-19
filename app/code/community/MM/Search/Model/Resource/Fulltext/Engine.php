@@ -106,6 +106,7 @@ class MM_Search_Model_Resource_Fulltext_Engine extends Mage_CatalogSearch_Model_
 					$payload->setData('max_price', (float) $maximalPrice);
 				} else {
 					$payload->setData('min_price', (float) $product->getFinalPrice());
+					$payload->setData('max_price', (float) $product->getFinalPrice());
 				}
 
 				// Add additional attributes

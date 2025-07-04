@@ -206,4 +206,62 @@ class MM_Search_Model_Api
             ]
         ]);   
     }
+
+    /**
+     * Add category_paths field to existing collection if it doesn't exist
+     * @param string|null $collectionName
+     * @return bool
+     */
+    public function addCategoryPathsField($collectionName = null)
+    {
+        if ($collectionName === null) {
+            $collectionName = $this->collectionName;
+        }
+
+        try {
+            $client = $this->getAdminClient();
+            
+            // Check if collection exists
+            $collections = $client->collections->retrieve();
+            $collectionExists = false;
+            foreach ($collections as $collection) {
+                if ($collection['name'] === $collectionName) {
+                    $collectionExists = true;
+                    break;
+                }
+            }
+
+            if (!$collectionExists) {
+                return false;
+            }
+
+            // Get current collection schema
+            $collectionInfo = $client->collections[$collectionName]->retrieve();
+            $fields = $collectionInfo['fields'];
+            
+            // Check if category_paths field already exists
+            foreach ($fields as $field) {
+                if ($field['name'] === 'category_paths') {
+                    return true; // Field already exists
+                }
+            }
+
+            // Add the category_paths field
+            $client->collections[$collectionName]->update([
+                'fields' => [
+                    [
+                        'name' => 'category_paths',
+                        'type' => 'string[]',
+                        'facet' => true,
+                        'optional' => true
+                    ]
+                ]
+            ]);
+
+            return true;
+        } catch (Exception $e) {
+            Mage::logException($e);
+            return false;
+        }
+    }
 }

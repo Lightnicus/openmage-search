@@ -346,3 +346,223 @@
 .product-name {
     font-size: 18px;
 }
+
+/* Hierarchical Category Styles */
+.hierarchical-category-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 2px 0;
+}
+
+/* Category toggle button (expand/collapse) */
+.category-toggle {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 3px;
+    color: #495057;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: bold;
+    height: 18px;
+    line-height: 1;
+    margin-right: 6px;
+    min-width: 18px;
+    padding: 0;
+    text-align: center;
+    transition: all 0.2s ease;
+    user-select: none;
+    width: 18px;
+}
+
+.category-toggle:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+    color: #212529;
+}
+
+.category-toggle:focus {
+    outline: 2px solid #3182ce;
+    outline-offset: 1px;
+}
+
+/* Spacer for categories without children to maintain alignment */
+.category-toggle-spacer {
+    display: inline-block;
+    margin-right: 6px;
+    width: 18px;
+    height: 18px; /* Same height as toggle button for perfect alignment */
+}
+
+.category-indent {
+    display: inline-block;
+    width: 20px;
+    height: 1px;
+}
+
+.category-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    flex: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.category-label:hover {
+    background-color: #f5f5f5;
+}
+
+.category-checkbox {
+    margin: 0 8px 0 0;
+    cursor: pointer;
+    accent-color: #3182ce;
+}
+
+.category-name {
+    flex: 1;
+    font-size: 14px;
+    color: #333;
+    transition: color 0.2s;
+}
+
+.category-count {
+    font-size: 12px;
+    color: #999;
+    margin-left: 5px;
+    padding: 1px 6px;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+}
+
+/* Level-specific styling */
+.hierarchical-category-item[data-level="0"] .category-name {
+    font-weight: 600;
+    color: #2c5282;
+    font-size: 15px;
+}
+
+.hierarchical-category-item[data-level="1"] .category-name {
+    font-weight: 500;
+    color: #4a5568;
+    font-size: 14px;
+}
+
+.hierarchical-category-item[data-level="2"] .category-name {
+    font-weight: normal;
+    color: #666;
+    font-size: 13px;
+}
+
+.hierarchical-category-item[data-level="3"] .category-name {
+    font-weight: normal;
+    color: #777;
+    font-size: 13px;
+}
+
+/* Refined (selected) category styling */
+.hierarchical-category-item .category-checkbox:checked + .category-name {
+    color: #1a365d;
+    font-weight: 600;
+}
+
+.hierarchical-category-item .category-checkbox:checked + .category-name + .category-count {
+    background-color: #3182ce;
+    color: white;
+}
+
+/* Ensure synthetic categories also get selected styling */
+.hierarchical-category-item .category-checkbox:checked + .category-name.synthetic {
+    color: #1a365d;
+    font-weight: 600;
+}
+
+.hierarchical-category-item .category-checkbox:checked + .category-name.synthetic + .category-count.synthetic {
+    background-color: #3182ce;
+    color: white;
+}
+
+/* Hover effects by level */
+.hierarchical-category-item[data-level="0"] .category-label:hover .category-name {
+    color: #1a365d;
+}
+
+.hierarchical-category-item[data-level="1"] .category-label:hover .category-name {
+    color: #2d3748;
+}
+
+.hierarchical-category-item[data-level="2"] .category-label:hover .category-name {
+    color: #4a5568;
+}
+
+.hierarchical-category-item[data-level="3"] .category-label:hover .category-name {
+    color: #555;
+}
+
+/* Spacing between different root categories */
+.hierarchical-category-item[data-level="0"] {
+    margin-top: 10px;
+    padding-top: 6px;
+    border-top: 1px solid #eee;
+}
+
+.hierarchical-category-item[data-level="0"]:first-child {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 2px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .category-indent {
+        width: 15px;
+    }
+
+    .category-name {
+        font-size: 13px;
+    }
+
+    .hierarchical-category-item[data-level="0"] .category-name {
+        font-size: 14px;
+    }
+
+    .hierarchical-category-item[data-level="1"] .category-name {
+        font-size: 13px;
+    }
+
+    .hierarchical-category-item[data-level="2"] .category-name,
+    .hierarchical-category-item[data-level="3"] .category-name {
+        font-size: 12px;
+    }
+
+    .category-count {
+        font-size: 11px;
+        padding: 1px 4px;
+    }
+}
+
+/* Styles for synthetic parent categories (categories with 0 products) */
+.category-label.synthetic-parent {
+    cursor: pointer; /* Now clickable since they have checkboxes */
+    padding: 2px 4px; /* Same padding as regular categories */
+}
+
+.category-label.synthetic-parent:hover {
+    background-color: #f5f5f5; /* Same hover effect as regular categories */
+}
+
+/* Synthetic categories now inherit the same hover behavior as regular categories */
+/* No special overrides needed since they use the same label structure */
+
+/* Synthetic categories should follow the same level-specific styling as regular categories */
+/* Only make the count slightly more subdued, keep everything else consistent */
+.category-count.synthetic {
+    color: #bbb; /* Slightly more muted than regular counts */
+    background-color: #f8f8f8; /* Slightly more muted background */
+}
+
+/* Ensure synthetic categories inherit level-specific font sizes and weights */
+/* Remove any overrides that would make them look different from regular categories */

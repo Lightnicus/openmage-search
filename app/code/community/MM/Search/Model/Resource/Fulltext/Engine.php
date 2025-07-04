@@ -65,6 +65,9 @@ class MM_Search_Model_Resource_Fulltext_Engine extends Mage_CatalogSearch_Model_
 
 			if (!$collectionExists) {
 				$this->_createCollection($client, $collectionName, $storeId);
+			} else {
+				// Ensure category_paths field exists in existing collection
+				$this->_apiModel->setStoreId($storeId)->addCategoryPathsField($collectionName);
 			}
 
 			$productCollection = Mage::getResourceModel('catalog/product_collection')
@@ -91,6 +94,7 @@ class MM_Search_Model_Resource_Fulltext_Engine extends Mage_CatalogSearch_Model_
 					'url_key' => (string) $product->getUrlKey(),
 					'request_path' => (string) $product->getRequestPath() ?: 'catalog/product/view/id/' . $product->getId(),
 					'category_names' => (array) $this->_getCategoryNames($product, $storeId),
+					'category_paths' => (array) $this->_getCategoryPaths($product, $storeId),
 					'thumbnail' => (string) $product->getThumbnail(),
 					'thumbnail_small' => (string) $this->_getResizedImageUrl($product, 100, 100),
 					'thumbnail_medium' => (string) $this->_getResizedImageUrl($product, 300, 300),
@@ -196,7 +200,7 @@ class MM_Search_Model_Resource_Fulltext_Engine extends Mage_CatalogSearch_Model_
 				'per_page'            => 1000,
 				'highlight_full_fields' => 'name,sku,description,short_description',
 				'filter_by'           => 'status:1 && visibility:[2,4]',
-				'facet_by'            => 'category_names,min_price,product_type'
+				'facet_by'            => 'category_paths,min_price,product_type'
 			];
 
 			$searchResults = $client->collections[$collectionName]->documents->search($searchParameters);
@@ -233,6 +237,7 @@ class MM_Search_Model_Resource_Fulltext_Engine extends Mage_CatalogSearch_Model_
 				['name' => 'url_key', 'type' => 'string'],
 				['name' => 'request_path', 'type' => 'string'],
 				['name' => 'category_names', 'type' => 'string[]', 'facet' => true],
+				['name' => 'category_paths', 'type' => 'string[]', 'facet' => true],
 				['name' => 'thumbnail', 'type' => 'string'],
 				['name' => 'thumbnail_small', 'type' => 'string'],
 				['name' => 'thumbnail_medium', 'type' => 'string'],
@@ -297,6 +302,55 @@ class MM_Search_Model_Resource_Fulltext_Engine extends Mage_CatalogSearch_Model_
 			->addAttributeToSelect('name')
 			->addAttributeToFilter('is_active', true);
 		return $categoryCollection->getColumnValues('name');
+	}
+
+	/**
+	 * Get category paths for a product (hierarchical structure)
+	 * @param Mage_Catalog_Model_Product $product
+	 * @param mixed $storeId
+	 * @return array
+	 */
+	protected function _getCategoryPaths(Mage_Catalog_Model_Product $product, $storeId)
+	{
+		$categoryPaths = [];
+		$categoryCollection = $product->getCategoryCollection()
+			->setStore($storeId)
+			->addAttributeToSelect(['name', 'path'])
+			->addAttributeToFilter('is_active', true);
+
+		foreach ($categoryCollection as $category) {
+			$path = $this->_buildCategoryPath($category, $storeId);
+			if ($path) {
+				$categoryPaths[] = $path;
+			}
+		}
+
+		return $categoryPaths;
+	}
+
+	/**
+	 * Build hierarchical category path
+	 * @param Mage_Catalog_Model_Category $category
+	 * @param mixed $storeId
+	 * @return string|null
+	 */
+	protected function _buildCategoryPath(Mage_Catalog_Model_Category $category, $storeId)
+	{
+		$pathIds = explode('/', $category->getPath());
+		$pathNames = [];
+
+		foreach ($pathIds as $categoryId) {
+			if ($categoryId <= 1) { // Skip root category
+				continue;
+			}
+
+			$cat = Mage::getModel('catalog/category')->setStoreId($storeId)->load($categoryId);
+			if ($cat->getId() && $cat->getIsActive()) {
+				$pathNames[] = $cat->getName();
+			}
+		}
+
+		return count($pathNames) > 1 ? implode(' > ', $pathNames) : null;
 	}
 
 	/**
